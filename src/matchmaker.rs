@@ -30,6 +30,16 @@ impl Matchmaker {
     }
 
     fn tick(&self) {
+        let expired = self.pool.clear_expired_queue_players();
+        if !expired.is_empty() {
+            info!(
+                "清理超时玩家 {} 个（队列超时时间为 {} 秒），玩家ID: {:?}",
+                expired.len(),
+                self.pool.queue_timeout_seconds(),
+                expired
+            );
+        }
+
         let mut total_matches = 0;
 
         for rank in Rank::all_ranks() {

@@ -20,6 +20,7 @@ pub struct ApiResponse<T> {
 pub struct PoolStatusResponse {
     pub pools: HashMap<String, usize>,
     pub total_queued: usize,
+    pub queue_timeout_seconds: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -55,6 +56,7 @@ async fn join_match(
     match pool.add_player(player) {
         Ok(_) => {
             let wait_time = pool.get_player_wait_time(&payload.player_id).unwrap_or(0);
+            let timeout = pool.queue_timeout_seconds();
             let status = PlayerMatchStatus {
                 player_id: payload.player_id,
                 status: MatchStatus::Queued,
@@ -67,7 +69,11 @@ async fn join_match(
                 StatusCode::OK,
                 Json(ApiResponse {
                     success: true,
-                    message: format!("已加入 {} 段位匹配队列", rank.as_str()),
+                    message: format!(
+                        "已加入 {} 段位匹配队列（超过 {} 秒未匹配将自动移除）",
+                        rank.as_str(),
+                        timeout
+                    ),
                     data: Some(status),
                 }),
             )
@@ -123,6 +129,7 @@ async fn get_status(
 
     if pool.is_player_in_queue(&player_id) {
         let wait_time = pool.get_player_wait_time(&player_id).unwrap_or(0);
+        let timeout = pool.queue_timeout_seconds();
         let rank = pool
             .player_index
             .read()
@@ -131,11 +138,20 @@ async fn get_status(
             .copied()
             .unwrap_or(Rank::Bronze);
 
+        let message = if wait_time as f64 > timeout as f64 * 0.8 {
+            format!(
+                "匹配中...已等待 {} 秒，请注意: 超过 {} 秒将自动移出队列",
+                wait_time, timeout
+            )
+        } else {
+            "匹配中...".to_string()
+        };
+
         return (
             StatusCode::OK,
             Json(ApiResponse {
                 success: true,
-                message: "匹配中...".to_string(),
+                message,
                 data: Some(PlayerMatchStatus {
                     player_id,
                     status: MatchStatus::Queued,
@@ -186,6 +202,7 @@ async fn get_pool_status(
 ) -> Json<ApiResponse<PoolStatusResponse>> {
     let pools = pool.get_all_pool_sizes();
     let total_queued = pools.values().sum();
+    let timeout = pool.queue_timeout_seconds();
 
     Json(ApiResponse {
         success: true,
@@ -193,6 +210,7 @@ async fn get_pool_status(
         data: Some(PoolStatusResponse {
             pools,
             total_queued,
+            queue_timeout_seconds: timeout,
         }),
     })
 }
