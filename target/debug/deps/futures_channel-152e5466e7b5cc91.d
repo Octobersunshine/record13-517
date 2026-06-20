@@ -1,0 +1,9 @@
+E:\temp\record13\517\target\debug\deps\futures_channel-152e5466e7b5cc91.d: D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\lib.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\lock.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\mpsc\mod.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\mpsc\queue.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\oneshot.rs
+
+E:\temp\record13\517\target\debug\deps\libfutures_channel-152e5466e7b5cc91.rmeta: D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\lib.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\lock.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\mpsc\mod.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\mpsc\queue.rs D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\oneshot.rs
+
+D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\lib.rs:
+D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\lock.rs:
+D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\mpsc\mod.rs:
+D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\mpsc\queue.rs:
+D:\ProgramFiles\Rust\cargo_home\registry\src\index.crates.io-1949cf8c6b5b557f\futures-channel-0.3.32\src\oneshot.rs:
