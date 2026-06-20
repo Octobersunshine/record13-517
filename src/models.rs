@@ -77,6 +77,7 @@ pub struct MatchRequest {
 pub struct QueuedPlayer {
     pub player: Player,
     pub join_time: SystemTime,
+    pub group_id: Option<Uuid>,
 }
 
 impl QueuedPlayer {
@@ -84,8 +85,69 @@ impl QueuedPlayer {
         Self {
             player,
             join_time: SystemTime::now(),
+            group_id: None,
         }
     }
+
+    pub fn with_group(player: Player, group_id: Uuid) -> Self {
+        Self {
+            player,
+            join_time: SystemTime::now(),
+            group_id: Some(group_id),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupMember {
+    pub player_id: Uuid,
+    pub player_name: String,
+    pub score: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Group {
+    pub id: Uuid,
+    pub leader_id: Uuid,
+    pub members: Vec<Player>,
+    pub rank: Rank,
+    pub join_time: SystemTime,
+}
+
+impl Group {
+    pub fn new(leader_id: Uuid, members: Vec<Player>) -> Result<Self, String> {
+        if members.is_empty() {
+            return Err("组队不能没有成员".to_string());
+        }
+        if members.len() > 5 {
+            return Err("组队最多5名成员".to_string());
+        }
+
+        let avg_score: u32 = members.iter().map(|p| p.score).sum::<u32>() / members.len() as u32;
+        let rank = Rank::from_score(avg_score);
+
+        Ok(Self {
+            id: Uuid::new_v4(),
+            leader_id,
+            members,
+            rank,
+            join_time: SystemTime::now(),
+        })
+    }
+
+    pub fn size(&self) -> usize {
+        self.members.len()
+    }
+
+    pub fn contains_player(&self, player_id: &Uuid) -> bool {
+        self.members.iter().any(|p| p.id == *player_id)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupMatchRequest {
+    pub leader_id: Uuid,
+    pub members: Vec<GroupMember>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

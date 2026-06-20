@@ -1,5 +1,5 @@
 use crate::match_pool::SharedMatchPool;
-use crate::models::{MatchRequest, MatchStatus, Player, PlayerMatchStatus, Rank};
+use crate::models::{Group, GroupMatchRequest, MatchRequest, MatchStatus, Player, PlayerMatchStatus, Rank};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Json;
@@ -28,9 +28,19 @@ pub struct CancelRequest {
     pub player_id: Uuid,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct GroupMatchResponse {
+    pub group_id: Uuid,
+    pub leader_id: Uuid,
+    pub members: Vec<Player>,
+    pub rank: Rank,
+    pub member_count: usize,
+}
+
 pub fn create_router(pool: SharedMatchPool) -> Router {
     Router::new()
         .route("/api/match/join", post(join_match))
+        .route("/api/match/group/join", post(join_group_match))
         .route("/api/match/status/:player_id", get(get_status))
         .route("/api/match/cancel", post(cancel_match))
         .route("/api/match/pools", get(get_pool_status))
@@ -75,6 +85,69 @@ async fn join_match(
                         timeout
                     ),
                     data: Some(status),
+                }),
+            )
+        }
+        Err(e) => (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse {
+                success: false,
+                message: e,
+                data: None,
+            }),
+        ),
+    }
+}
+
+async fn join_group_match(
+    State(pool): State<SharedMatchPool>,
+    Json(payload): Json<GroupMatchRequest>,
+) -> (StatusCode, Json<ApiResponse<GroupMatchResponse>>) {
+    let mut players = Vec::new();
+    for member in &payload.members {
+        players.push(Player::new(member.player_id, member.player_name.clone(), member.score));
+    }
+
+    let group = match Group::new(payload.leader_id, players) {
+        Ok(g) => g,
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse {
+                    success: false,
+                    message: e,
+                    data: None,
+                }),
+            );
+        }
+    };
+
+    let group_rank = group.rank;
+    let group_id = group.id;
+    let leader_id = group.leader_id;
+    let members = group.members.clone();
+    let member_count = members.len();
+
+    match pool.add_group(group) {
+        Ok(_) => {
+            let timeout = pool.queue_timeout_seconds();
+            (
+                StatusCode::OK,
+                Json(ApiResponse {
+                    success: true,
+                    message: format!(
+                        "组队（{}人）已加入 {} 段位匹配队列，好友将优先分配至同队（超过 {} 秒未匹配将自动移除）",
+                        member_count,
+                        group_rank.as_str(),
+                        timeout
+                    ),
+                    data: Some(GroupMatchResponse {
+                        group_id,
+                        leader_id,
+                        members,
+                        rank: group_rank,
+                        member_count,
+                    }),
                 }),
             )
         }
@@ -138,13 +211,23 @@ async fn get_status(
             .copied()
             .unwrap_or(Rank::Bronze);
 
-        let message = if wait_time as f64 > timeout as f64 * 0.8 {
+        let group_info = pool
+            .get_player_group_id(&player_id)
+            .and_then(|gid| pool.get_group(&gid))
+            .map(|group| format!("（组队模式，共{}名队友）", group.size()));
+
+        let base_message = if wait_time as f64 > timeout as f64 * 0.8 {
             format!(
                 "匹配中...已等待 {} 秒，请注意: 超过 {} 秒将自动移出队列",
                 wait_time, timeout
             )
         } else {
             "匹配中...".to_string()
+        };
+
+        let message = match group_info {
+            Some(info) => format!("{}{}", base_message, info),
+            None => base_message,
         };
 
         return (
